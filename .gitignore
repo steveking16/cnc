@@ -1,2 +1,6 @@
 *.var
+*.var.bak
+*.var.new
 *.tmp
+aMill.*
+cncRouter.*
