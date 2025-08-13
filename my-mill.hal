@@ -18,9 +18,7 @@
 # (cntrl-O to save, then cntrl-X to exit)
 
 loadrt [KINS]KINEMATICS
-loadrt [EMCMOT]EMCMOT base_period_nsec=[EMCMOT]BASE_PERIOD \
-                      servo_period_nsec=[EMCMOT]SERVO_PERIOD \
-                      num_joints=[KINS]JOINTS
+loadrt [EMCMOT]EMCMOT base_period_nsec=[EMCMOT]BASE_PERIOD servo_period_nsec=[EMCMOT]SERVO_PERIOD num_joints=[KINS]JOINTS
 
 # also useful commands:
 #sudo apt install python3-gpiozero
@@ -46,10 +44,7 @@ loadrt [EMCMOT]EMCMOT base_period_nsec=[EMCMOT]BASE_PERIOD \
 # eSTOP-on      GPIO25  IN 
 
 
-loadrt hal_gpio inputs=GPIO25,GPIO7,GPIO12,GPIO13,GPIO8 \
-                pullup=GPIO25,GPIO7,GPIO12,GPIO13,GPIO8 \
-                outputs=GPIO18,GPIO26,GPIO9,GPIO10,GPIO11,GPIO5,\
-                        GPIO6,GPIO19,GPIO17,GPIO23,GPIO27,GPIO24 
+loadrt hal_gpio inputs=GPIO25,GPIO7,GPIO12,GPIO13,GPIO8  pullup=GPIO25,GPIO7,GPIO12,GPIO13,GPIO8  outputs=GPIO18,GPIO26,GPIO9,GPIO10,GPIO11,GPIO5,GPIO6,GPIO19,GPIO17,GPIO23,GPIO27,GPIO24 
 
 loadrt stepgen step_type=0,0,0
 addf stepgen.make-pulses       base-thread
@@ -110,10 +105,20 @@ net zdir	=> hal_gpio.GPIO23-out
 ##############################################
 #                               E-Stop
 ##############################################
+loadrt estop_latch
+addf estop-latch.0 servo-thread
 
-net estop-out  <= hal_gpio.GPIO25-in
-net estop-out  <= iocontrol.0.user-enable-out
-net estop-out => iocontrol.0.emc-enable-in
+# --- External EStop
+net estop-remote  estop-latch.0.fault-in <= hal_gpio.GPIO25-in
+
+# --- EStop signals
+net estop-loopin  iocontrol.0.user-enable-out => estop-latch.0.ok-in
+net estop-loopout iocontrol.0.emc-enable-in <= estop-latch.0.ok-out
+net estop-reset iocontrol.0.user-request-enable => estop-latch.0.reset
+
+# --- Machine is enabled
+net machine-is-enabled  <= motion.motion-enabled
+net machine-is-enabled  => hal_gpio.GPIO18
 
 ##############################################
 #				Stepper params
