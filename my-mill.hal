@@ -2,7 +2,7 @@
 # ----------
 # TODO:
 # my-mill moves but distances need configuring
-# e-stop disconnected
+
 # relay for "spindle" disconnected
 # limit switches disconnected
 # ---------
@@ -39,12 +39,13 @@ loadrt [EMCMOT]EMCMOT base_period_nsec=[EMCMOT]BASE_PERIOD servo_period_nsec=[EM
 # ydir          GPIO19  OUT
 # zstep         GPIO17  OUT
 # zdir          GPIO23  OUT
-# spindle-on    GPIO18  OUT
+#
+# spindle-on    GPIO9   OUT
 # 
-# eSTOP-on      GPIO25  IN 
+# estop-remote  GPIO25  IN 
 
 
-loadrt hal_gpio inputs=GPIO25,GPIO7,GPIO12,GPIO13,GPIO8  pullup=GPIO25,GPIO7,GPIO12,GPIO13,GPIO8  outputs=GPIO18,GPIO26,GPIO9,GPIO10,GPIO11,GPIO5,GPIO6,GPIO19,GPIO17,GPIO23,GPIO27,GPIO24 
+loadrt hal_gpio inputs=GPIO25,GPIO7,GPIO12,GPIO13,GPIO8  pullup=GPIO25,GPIO7,GPIO12,GPIO13,GPIO8  outputs=GPIO9,GPIO26,GPIO10,GPIO11,GPIO5,GPIO6,GPIO19,GPIO17,GPIO23,GPIO27,GPIO24 
 
 loadrt stepgen step_type=0,0,0
 addf stepgen.make-pulses       base-thread
@@ -61,18 +62,6 @@ addf hal_gpio.write            base-thread
 
 
 ##############################################
-#                Spindle Outputs
-##############################################
-
-net spindle-enable spindle.0.on => hal_gpio.GPIO18-out
-
-###### Enable (tested)
-net spindle-enable spindle.0.on => hal_gpio.GPIO18-out
-
-###### PWM (tested)
-
-
-##############################################
 #                Stepper Outputs
 ##############################################
 
@@ -84,14 +73,6 @@ net ystep	=> hal_gpio.GPIO6-out
 net ydir	=> hal_gpio.GPIO19-out
 net zstep	=> hal_gpio.GPIO17-out
 net zdir	=> hal_gpio.GPIO23-out
-
-##############################################
-#               General Outputs
-##############################################
-#pin 18(GPIO24) controls the relay on the breakout board
-#
-#net spindle-on  iocontrol.0.spindle-on => hal_gpio.GPIO24-out
-#
 
 ##############################################
 #				Limit Inputs
@@ -114,11 +95,13 @@ net estop-remote  estop-latch.0.fault-in <= hal_gpio.GPIO25-in
 # --- EStop signals
 net estop-loopin  iocontrol.0.user-enable-out => estop-latch.0.ok-in
 net estop-loopout iocontrol.0.emc-enable-in <= estop-latch.0.ok-out
-net estop-reset iocontrol.0.user-request-enable => estop-latch.0.reset
+net estop-reset   iocontrol.0.user-request-enable => estop-latch.0.reset
 
-# --- Machine is enabled
-net machine-is-enabled  <= motion.motion-enabled
-net machine-is-enabled  => hal_gpio.GPIO18
+##############################################
+#                Spindle Outputs
+##############################################
+
+net spindle-running  motion.spindle-on <= hal_gpio.GPIO9-out
 
 ##############################################
 #				Stepper params
